@@ -20,7 +20,6 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,11 +43,12 @@ import net.sourceforge.tess4j.TesseractException;
 //** 처음처럼 소주는 따로 발주해야됨, 여름에는 아이스드링크 스킵 풀어야됨
 
 //한것들
-//빵 떡(꾀=1\n-|) 디저트 비스켓봇쿠키 스낵류 시리얼 조콜릿 껌 캔디 일반아이스크림 RI아이스크림(뮈0-0|스크림) 마른안주류(힌_르0~7호근\nl- |_-「-「「) 육카좀류       담배 
-//과밀굶재소 놈산식재료 죽수산식재료 반잔류 면류(면끈\n-「「) 상온즉석식ing(씸- 즈^쇄^|\n다돈「 -l-l) 냉동즉석식(냐도즈서시\n:l:>-l -l-l)
+//빵 떡(꾀=1\n-|) 디저트 비스켓봇쿠키 스낵류 시리얼 조콜릿 껌 캔디 일반아이스크림 RI아이스크림(뮈0-0|스크림) 마른안주류(힌_르0~7호근\nl- |_-「-「「) 육카좀류       
+//과밀굶재소 놈산식재료 죽수산식재료 조미료류 커피뜻류(커피차류) 반잔류 면류(면끈\n-「「) 상온즉석식ing(씸- 즈^쇄^|\n다돈「 -l-l) 냉동즉석식(냐도즈서시\n:l:>-l -l-l)
 //냉장즉석식(대공즈서시\n:l:>-l -l-l) 의약외품(폐품\n뫼므) 건강기능(컨감기능) 안전상비의약품(완전샬비뫼얌품) 식재료선믈세트 과밀야재음료 
-//기능컨감음료 생수(갸폐낙노\n힌-「)  커피음료 곳음료 틴산음료 아이스드링크(0-이스드림크) 요구르트 우유 얼음(미므\n근딘) 맥쥬(꾀폐컷렸\n-|-「)  소주(싯노호토\n-l--「)
-//전통주(해야됨)
+//기능컨감음료 생수(갸폐낙노\n힌-「)  커피음료 차음료(곳음료) 틴산음료 아이스드링크(0-이스드림크) 요구르트 우유 얼음(미므\n근딘) 맥쥬(꾀폐컷렸\n-|-「)  소주(싯노호토\n-l--「)
+//전통주 양주(0=7렸\n타-「) 와인 음료선믈세트 위생용품(타 갸폐-줌-뚝뚝\n뉘랍다판) 홈/주방용품(꽈- 호호\n몸댈†빙돋품) 우천용상품(우전돋샬품) 상품권 편의상품(편뫼삼품)
+//담배 전 자담배 소모품
 
 //커피음료가 입수 > 1일때 발주공식이 잘되있음 
 
@@ -266,9 +266,7 @@ public class Main {
 		delay(1000);
 
 		while (true) {
-			
-			
-			
+
 			delay(1000);
 			// 발주해야되는 양을 사진찍어서 구한다.
 			capturedImage = r.createScreenCapture(screenRect);
@@ -287,10 +285,9 @@ public class Main {
 
 			System.out.println(kindString);
 
-			// 소주까지 프로그램 짯음 전통주 나타나면 프로그램 종료한다.
-			if (kindString.equals("음료선믈세트"))
+			// 소모품일떄 프로그램 끈다.
+			if (kindString.equals("소모품"))
 				System.exit(0);
-
 
 			// 얼마나 발주해야되는지 개수를 구함
 			instance.setLanguage("eng");// 영어로 다시 셋팅해야 숫자가 잘 인식됨
@@ -307,15 +304,14 @@ public class Main {
 
 			System.out.println(totalOrderQT);
 
-			
-			if (kindString.equals("꾀=1\n-|") || kindString.equals("식재료선믈세트")) { //떡
-				doType(KeyEvent.VK_F4); 
+			if (kindString.equals("꾀=1\n-|") || kindString.equals("식재료선믈세트")) { // 떡
+				doType(KeyEvent.VK_F4);
 				continue;
-			} else if(kindString.equals("밀반빤이스크림") || kindString.equals("과밀굶재소") || kindString.equals("0-이스드림크")) {
-				
-				passClickAmount = totalOrderQT / 10 + 1; 
-				
-				for(int i = 0; i < passClickAmount; i++) {
+			} else if (kindString.equals("밀반빤이스크림") || kindString.equals("과밀굶재소") || kindString.equals("0-이스드림크")) {
+
+				passClickAmount = totalOrderQT / 10 + 1;
+
+				for (int i = 0; i < passClickAmount; i++) {
 					doType(KeyEvent.VK_F4);
 				}
 				continue;
@@ -451,6 +447,7 @@ public class Main {
 				case "과밀야재음료":
 				case "요구르트":
 				case "다다\n-「1-「":// 우유
+				case "전통주":
 					// System.out.println("milk");
 					// expireDate값을 가져온다.
 					expiredDateImage = capturedImage.getSubimage(EXPIRED_DATE_X,
@@ -458,7 +455,6 @@ public class Main {
 							EXPIRED_DATE_HEIGHT);
 					expireDate = Integer.parseInt(image2string(instance, expiredDateImage));
 					break;
-
 				}
 				if (zeroOrderCount < 7) {
 					for (int y = deliveredQTloopStart; y < 7; y++) {
@@ -476,6 +472,96 @@ public class Main {
 
 				// 중분류에 따라서 발주공식이 나뉜다.
 				switch (kindString) {
+				case "낙샨느뇨폐근\n--|-「「": // 스낵류
+					//입수는 1또는 1이상
+					//유통기한은 전부 10이상
+					if (multipliedNum == 1) {
+						if (averageSold >= 0.7) {
+							averageSold = 0.7f;
+						}
+						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
+					} else if(multipliedNum > 1 && (int) (averageSold * 10) > 1 && currentStock <= 2) {
+						inputOrder = 1;
+					}
+					
+					break;
+					
+				case "전 자담배":
+					//입수는 10
+					//유통기한 무한대
+					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
+
+					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+					
+					break;
+				case "상품권":
+					// 입수는 5인것 = 상품권
+					// 유통기한 무한대
+
+					if (multipliedNum == 5) {
+						inputOrder = (int) ((15 - currentStock - futrueDeliveryQt) / 5);
+					}
+
+					break;
+				case "음료선믈세트":
+				case "와인":
+				case "0=7렸\n타-「":// 양주
+					// 입수 1또는 1이상
+					// 유통기한 다 10이상
+					if (multipliedNum == 1) {
+						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
+					} else if (multipliedNum > 1) {
+						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
+						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+					}
+
+					break;
+				case "전통주":
+					// 입수 1또는 1이상
+					// 유통기한 10이하인 것들 존재
+					if (expireDate > 10) {
+						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
+					} else if (expireDate <= 10) {
+						toBeOrderedQt = averageSold * expireDate * 3 / 4 - currentStock - futrueDeliveryQt;
+					}
+
+					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+
+					break;
+
+				case "타 갸폐-줌-뚝뚝\n뉘랍다판":
+				case "커피뜻류":
+					// 입수 1또는 1이상
+					// 유통기한 10이상
+					if (multipliedNum == 1) {
+						if ((int) (averageSold * 10) == 1) {// averageSold가 정확히는 0.1이 아님. 그래서 averageSold == 0.1안먹힘. 소수점
+							// 버릴려고 이짓함.
+							inputOrder = (int) (2 - currentStock - futrueDeliveryQt);
+						} else if ((int) (averageSold * 10) > 1) {
+							inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
+						}
+					} else if (multipliedNum > 1) {
+						toBeOrderedQt = averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt;
+						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+					}
+
+					break;
+				case "조미료류":
+					// 입수 1또는 1이상
+					// 유통기한 10이상
+					if (multipliedNum == 1) {
+						if ((int) (averageSold * 10) == 1) {// averageSold가 정확히는 0.1이 아님. 그래서 averageSold == 0.1안먹힘. 소수점
+							// 버릴려고 이짓함.
+							inputOrder = (int) (2 - currentStock - futrueDeliveryQt);
+						} else if ((int) (averageSold * 10) > 1) {
+							inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
+						}
+					} else if (multipliedNum > 1) {
+						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
+						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+					}
+
+					break;
 
 				case "싯노호토\n-l--「": // 소주
 					// 입수는 전부 1 이상
@@ -634,6 +720,9 @@ public class Main {
 
 					break;
 
+				case "편뫼삼품":
+				case "우전돋샬품":// 우천용상품
+				case "꽈- 호호\n몸댈†빙돋품":// 홈/주방용품
 				case "완전샬비뫼얌품":
 				case "씸- 즈^쇄^|\n다돈「 -l-l":
 				case "냐도즈서시\n:l:>-l -l-l":
@@ -654,6 +743,14 @@ public class Main {
 				case "반잔류":
 					// 입수는 다 1이다.
 				case "죽수산식재료":
+					
+					if (multipliedNum > 1) {
+						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
+							inputOrder = 1;
+					} else if (multipliedNum == 1) {
+						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
+					}
+					
 					if (expireDate < 10) {
 						if ((int) (averageSold * 10) == 1) {
 							inputOrder = (int) (1 - currentStock - futrueDeliveryQt);
@@ -662,19 +759,11 @@ public class Main {
 						}
 					}
 
-					if (multipliedNum > 1) {
-						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
-							inputOrder = 1;
-					} else if (multipliedNum == 1) {
-						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
-					}
-
 					break;
 				case "육카좀류":
 				case "놈산식재료":
 					if (expireDate < 10) {
 						toBeOrderedQt = (averageSold * expireDate) - currentStock - futrueDeliveryQt;
-
 						if ((averageSold * expireDate) - (int) (averageSold * expireDate) == 0) {// averageSold *
 																									// expireDate의 소수점
 																									// 자리가
@@ -683,7 +772,7 @@ public class Main {
 						}
 					} else if (expireDate >= 10) {
 						toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
-						if (averageSold == 1) {
+						if ((int) (averageSold * 10) == 1) {
 							toBeOrderedQt = 1 - currentStock - futrueDeliveryQt;
 						}
 					}
@@ -747,8 +836,7 @@ public class Main {
 
 					break;
 
-				case "낙샨느뇨폐근\n--|-「「": // 스낵류
-				case "뮈0-0|스크림"://RI아이스크림
+				case "뮈0-0|스크림":// RI아이스크림
 				case "힌_르0~7호근\nl- |_-「-「「":
 
 					if (averageSold >= 0.7) {
@@ -761,7 +849,7 @@ public class Main {
 
 				case "담배":
 
-					toBeOrderedQt = (averageSold * 10 / 2) - currentStock - futrueDeliveryQt;
+					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
 
 					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					/*
@@ -775,6 +863,9 @@ public class Main {
 				case "캔디":
 				case "꺼\n그":
 				case "조콜릿":
+					//입수는 1또는 1이상
+					//유통기한은 10이상
+					
 					if (multipliedNum > 1) {
 						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
 							inputOrder = 1;
