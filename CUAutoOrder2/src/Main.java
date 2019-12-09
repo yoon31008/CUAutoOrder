@@ -183,13 +183,13 @@ public class Main {
 
 		// 테서랙트 세팅
 		ITesseract instance = new Tesseract();
-		// instance.setDatapath("C:\\Users\\Joshyoon\\eclipseWorkspace\\CUAutoOrder2\\tessdata");
-		instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");
+		instance.setDatapath("C:\\tessdata");// 노트북용
+		//instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata"); //집컴용
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			// InputStream in = new FileInputStream("home.properties");
-			InputStream in = new FileInputStream("home.properties");
+			InputStream in = new FileInputStream("notebook.properties"); //노트북용
+			//InputStream in = new FileInputStream("home.properties"); //집컴용
 
 			prop.load(in);
 			/*
