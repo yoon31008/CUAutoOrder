@@ -187,14 +187,13 @@ public class Main {
 
 		// 테서랙트 세팅
 		ITesseract instance = new Tesseract();
-		instance.setDatapath("C:\\tessdata");// 노트북용
-		// instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");
-		// //집컴용
+		//instance.setDatapath("C:\\tessdata");// 노트북용
+		 instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");//집컴용
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			InputStream in = new FileInputStream("notebook.properties"); // 노트북용
-			// InputStream in = new FileInputStream("home.properties"); //집컴용
+			//InputStream in = new FileInputStream("notebook.properties"); // 노트북용
+			InputStream in = new FileInputStream("home.properties"); //집컴용
 
 			prop.load(in);
 			/*
@@ -458,6 +457,20 @@ public class Main {
 					expireDate = Integer.parseInt(image2string(instance, expiredDateImage));
 					break;
 				}
+				
+				//발주날 다음날에 들어오는 상품종류는 deliveredQTloopStart + 1을 한다. 발주날과 납품날이 같은거는 건드릴 필요 없다.
+				//발주날과 납품날이 같은 것들:
+				
+				//발주한 다음날 들어오는 경우: 비스켓/쿠키 스낵류 껌은이틀어긋남? 캔디이틀어긋남 마른안주류1,2어긋섞임 농상식재료 조미료류
+				
+				//둘가지 경우가 섞여있는 경우: 빵(편스토랑이 어긋나있음) 디저트 육가공류 축수산식재료
+				
+				//모름: RI아이스크림
+				
+				/*switch(kindString) {
+				
+				}*/
+				
 				if (zeroOrderCount < 7) {
 					for (int y = deliveredQTloopStart; y < 7; y++) {
 						deliveredQtAdayImage = capturedImage.getSubimage(
@@ -549,7 +562,7 @@ public class Main {
 					// 입수 1또는 1이상
 					// 유통기한 10이하인 것들 존재
 					if (expireDate > 10) {
-						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
+						toBeOrderedQt = averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt;
 					} else if (expireDate <= 10) {
 						toBeOrderedQt = averageSold * expireDate * 3 / 4 - currentStock - futrueDeliveryQt;
 					}
@@ -675,6 +688,10 @@ public class Main {
 					}
 
 					inputOrder = (int) (toBeOrderedQt / multipliedNum);
+					
+					if(multipliedNum == 1 && (int)(averageSold * 10) == 1) {
+						inputOrder = (int) (1 - currentStock - futrueDeliveryQt);
+					}
 
 					break;
 
@@ -869,9 +886,9 @@ public class Main {
 						inputOrder = 1;
 					}
 
-					if (inputOrder >= 7) {
+					/*if (inputOrder >= 7) {
 						inputOrder = 7;
-					}
+					}*/
 
 					break;
 
