@@ -23,6 +23,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
 
 import javax.imageio.ImageIO;
@@ -170,6 +172,8 @@ public class Main {
 
 	private static int passClickAmount;
 
+	private static boolean jobsDone = false;
+
 	public static void main(String args[]) throws AWTException, IOException, TesseractException {
 		Properties prop = new Properties();
 
@@ -184,16 +188,22 @@ public class Main {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
 		Dimension screenSize = toolkit.getScreenSize();
 		Rectangle screenRect = new Rectangle(screenSize);
+		
+		//오늘 요일을 구한다.
+		Date now = new Date();
+		Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        int todayInt = calendar.get(Calendar.DAY_OF_WEEK);
 
 		// 테서랙트 세팅
 		ITesseract instance = new Tesseract();
-		// instance.setDatapath("C:\\tessdata");// 노트북용
-		instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");// 집컴용
+		instance.setDatapath("C:\\tessdata");// 노트북용
+		//instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");// 집컴용
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			// InputStream in = new FileInputStream("notebook.properties"); // 노트북용
-			InputStream in = new FileInputStream("home.properties"); // 집컴용
+			InputStream in = new FileInputStream("notebook.properties"); // 노트북용
+			//InputStream in = new FileInputStream("home.properties"); // 집컴용
 
 			prop.load(in);
 			/*
@@ -290,7 +300,7 @@ public class Main {
 			System.out.println(kindString);
 
 			// 소모품일떄 프로그램 끈다.
-			if (kindString.equals("소모품"))
+			if (kindString.equals("소모품") || jobsDone == true)
 				System.exit(0);
 
 			// 얼마나 발주해야되는지 개수를 구함
@@ -712,7 +722,7 @@ public class Main {
 					} else if (multipliedNum > 1) {
 						toBeOrderedQt = averageSold * 10 * 2 / 3  - currentStock - futrueDeliveryQt;
 
-						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+						inputOrder = (int) Math.floor(toBeOrderedQt / multipliedNum);
 					}
 
 					break;
@@ -935,6 +945,15 @@ public class Main {
 					}
 
 					break;
+				
+				default:
+					//이클립스로 화면전환
+					r.keyPress(KeyEvent.VK_ALT);
+					r.keyPress(KeyEvent.VK_TAB);
+					r.keyRelease(KeyEvent.VK_ALT);
+					r.keyRelease(KeyEvent.VK_TAB);
+					System.out.println("데이터에 없는항목임");
+					System.exit(0);
 				}
 
 				System.out.println("totalOrderedNum: " + totalOrderedNum + "multipliedNum: " + multipliedNum
@@ -961,6 +980,10 @@ public class Main {
 
 				// 한칸 아래로 이동
 				doType(KeyEvent.VK_DOWN);
+				
+				if(todayInt == 7 && kindString == "다다\\n-「1-「" && i == totalOrderQT - 1 ) {//우유
+					jobsDone = true;
+				}
 			}
 
 		}
