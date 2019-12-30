@@ -305,7 +305,7 @@ public class Main {
 
 			// 얼마나 발주해야되는지 개수를 구함
 			instance.setLanguage("eng");// 영어로 다시 셋팅해야 숫자가 잘 인식됨
-			instance.setTessVariable("tessedit_char_whitelist", "0123456789./");
+			instance.setTessVariable("tessedit_char_whitelist", "-0123456789./");
 
 			totalOrderQTimage = capturedImage.getSubimage(TOTAL_ORDER_QT_X, TOTAL_ORDER_QT_Y, TOTAL_ORDER_QT_WIDTH,
 					TOTAL_ORDER_QT_HEIGHT);
@@ -405,6 +405,8 @@ public class Main {
 
 				currentStock = Integer.parseInt(image2string(instance, currentStockImage));
 
+				//System.out.println(currentStock);
+				
 				// 현재고와 평균판매를 비교해서 빨리넘길거는 빨리넘김
 				if (kindString.equals("담배") && currentStock > averageSold * 10 / 2) {
 					doType(KeyEvent.VK_DOWN);
@@ -498,6 +500,8 @@ public class Main {
 				futrueDeliveryQt = totalOrderedNum * multipliedNum - totalDeliveredQt;
 
 				// 중분류에 따라서 발주공식이 나뉜다.
+				//System.out.println(kindString);
+				
 				switch (kindString) {
 
 				case "전기면료":
@@ -556,7 +560,7 @@ public class Main {
 					break;
 
 				case "완구류":
-				case ":l 륵근\\n:††「": // 문구류
+				case ":l 륵근\n:††「": // 문구류
 				case "음료선믈세트":
 				case "와인":
 				case "0=7렸\n타-「": // 양주
@@ -981,7 +985,7 @@ public class Main {
 				// 한칸 아래로 이동
 				doType(KeyEvent.VK_DOWN);
 				
-				if(todayInt == 7 && kindString == "다다\\n-「1-「" && i == totalOrderQT - 1 ) {//우유
+				if(todayInt == 7 && kindString == "다다\n-「1-「" && i == totalOrderQT - 1 ) {//우유
 					jobsDone = true;
 				}
 			}
