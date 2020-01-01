@@ -307,7 +307,7 @@ public class Main {
 			// 소모품일떄 프로그램 끈다.
 			if (kindString.equals("소모품") || jobsDone == true) {
 				if (setFocusToWindowsApp("엄마, 아빠", 0)) {
-					copy("테스트");
+					copy("자동발주 완료~");
 					paste();
 					r.keyPress(KeyEvent.VK_ENTER);
 					r.keyRelease(KeyEvent.VK_ENTER);
