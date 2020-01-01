@@ -16,6 +16,8 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -42,6 +44,9 @@ import org.opencv.imgproc.Imgproc;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
 //** 문화상품권, 소주는 따로 발주해야됨, 여름에는 아이스드링크 스킵 풀어야됨
 
 //한것들
@@ -300,8 +305,16 @@ public class Main {
 			System.out.println(kindString);
 
 			// 소모품일떄 프로그램 끈다.
-			if (kindString.equals("소모품") || jobsDone == true)
-				System.exit(0);
+			if (kindString.equals("소모품") || jobsDone == true) {
+				if (setFocusToWindowsApp("엄마, 아빠", 0)) {
+					copy("테스트");
+					paste();
+					r.keyPress(KeyEvent.VK_ENTER);
+					r.keyRelease(KeyEvent.VK_ENTER);
+				} else {
+					System.out.println("단톡방이 안켜져있음");
+				}
+			}
 
 			// 얼마나 발주해야되는지 개수를 구함
 			instance.setLanguage("eng");// 영어로 다시 셋팅해야 숫자가 잘 인식됨
@@ -1127,4 +1140,56 @@ public class Main {
 	public static int getIntFromProperties(Properties prop, String inputString) {
 		return Integer.parseInt(prop.getProperty(inputString));
 	}
+	
+	public static boolean setFocusToWindowsApp(String applicationTitle, int... windowState) {
+		int state = User32.SW_SHOWNORMAL; // default window state (Normal)
+		if (windowState.length > 0) {
+			state = windowState[0];
+			switch (state) {
+			default:
+			case 0:
+				state = User32.SW_SHOWNORMAL;
+				break;
+			case 1:
+				state = User32.SW_SHOWMAXIMIZED;
+				break;
+			case 2:
+				state = User32.SW_SHOWMINIMIZED;
+				break;
+			}
+		}
+		User32 user32 = User32.INSTANCE;
+		WinDef.HWND hWnd = user32.FindWindow(null, applicationTitle);
+		if (user32.IsWindowVisible(hWnd)) {
+			user32.ShowWindow(hWnd, state); // .SW_SHOW);
+			user32.SetForegroundWindow(hWnd);
+			user32.SetFocus(hWnd);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static void copy(String text) {
+		Clipboard clipboard = getSystemClipboard();
+
+		clipboard.setContents(new StringSelection(text), null);
+	}
+
+	public static void paste() throws AWTException {
+		Robot robot = new Robot();
+
+		robot.keyPress(KeyEvent.VK_CONTROL);
+		robot.keyPress(KeyEvent.VK_V);
+		robot.keyRelease(KeyEvent.VK_CONTROL);
+		robot.keyRelease(KeyEvent.VK_V);
+	}
+
+	private static Clipboard getSystemClipboard() {
+		Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
+		Clipboard systemClipboard = defaultToolkit.getSystemClipboard();
+
+		return systemClipboard;
+	}
+	
 }

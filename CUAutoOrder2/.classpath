@@ -31,5 +31,6 @@
 	<classpathentry kind="lib" path="C:/Tess4J/lib/slf4j-api-1.7.25.jar"/>
 	<classpathentry kind="lib" path="C:/Tess4J/lib/xmlgraphics-commons-1.5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/윤동욱/git/CUAutoOrder/CUAutoOrder2/dist/tess4j-3.4.8.jar"/>
+	<classpathentry kind="lib" path="lib/jna-platform.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
