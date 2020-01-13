@@ -216,13 +216,14 @@ public class Main {
 
 		// 테서랙트 세팅
 		ITesseract instance = new Tesseract();
-		// instance.setDatapath("C:\\tessdata");// 노트북용
-		instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");// 집컴용
+		instance.setDatapath("C:\\tessdata");// 노트북용
+		// instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");//
+		// 집컴용
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			// InputStream in = new FileInputStream("notebook.properties"); // 노트북용
-			InputStream in = new FileInputStream("home.properties"); // 집컴용
+			InputStream in = new FileInputStream("notebook.properties"); // 노트북용
+			// InputStream in = new FileInputStream("home.properties"); // 집컴용
 
 			prop.load(in);
 			/*
@@ -315,6 +316,7 @@ public class Main {
 
 			// 중분류가 바뀔때까지 기다린다. 통신이상으로 페이지넘어가는게 오래걸릴수 있기때문.
 			while (true) {
+				delay(100);
 				String preKindString = kindString;
 				capturedImage = r.createScreenCapture(screenRect);
 				kindImage = capturedImage.getSubimage(KIND_X, KIND_Y, KIND_WIDTH, KIND_HEIGHT);
@@ -328,12 +330,21 @@ public class Main {
 			 * ImageIO.write(enlargedKindImage, "bmp", outputfile); } catch (IOException e)
 			 * { e.printStackTrace(); }
 			 */
+			// 원래 식
+			/*
+			 * capturedImage = r.createScreenCapture(screenRect); kindImage =
+			 * capturedImage.getSubimage(KIND_X, KIND_Y, KIND_WIDTH, KIND_HEIGHT);
+			 * enlargedKindImage = enlargeImage(kindImage, KIND_WIDTH, KIND_HEIGHT);
+			 * kindString = image2string(instance, enlargedKindImage);
+			 */
 
 			System.out.println(kindString);
 
 			// 소모품일떄 프로그램 끈다.
 			if (kindString.equals("소모품") || jobsDone == true) {
 				if (setFocusToWindowsApp("엄마, 아빠", 0)) {
+					r.keyPress(KeyEvent.VK_ENTER);
+					r.keyRelease(KeyEvent.VK_ENTER);
 					copy("발주가 완료되었습니다^^");
 					paste();
 					r.keyPress(KeyEvent.VK_ENTER);
@@ -399,6 +410,7 @@ public class Main {
 					instance.setLanguage("kor");
 					instance.setTessVariable("tessedit_char_whitelist", "");
 					while (true) {
+						delay(100);
 						String preString = productNameString;
 						capturedImage = r.createScreenCapture(screenRect);
 						productNameImg = capturedImage.getSubimage(PRODUCT_NAME_FIRST_X, PRODUCT_NAME_FIRST_Y,
@@ -559,6 +571,9 @@ public class Main {
 				// 중분류에 따라서 발주공식이 나뉜다.
 				// System.out.println(kindString);
 
+				if (futrueDeliveryQt <= 0)
+					futrueDeliveryQt = 0;
+
 				switch (kindString) {
 
 				case "전기면료":
@@ -693,11 +708,13 @@ public class Main {
 				case "꾀폐컷렸\n-|-「":// 맥쥬
 					// 입수는 다 1초과
 					// 유통기한은 다 10이상
-					if (multipliedNum > 1) {
-						toBeOrderedQt = averageSold * 10 * 3 / 4 - currentStock - futrueDeliveryQt;
 
-						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
-					}
+					toBeOrderedQt = averageSold * 10 * 3 / 4 - currentStock - futrueDeliveryQt;
+
+					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
+
+					if (multipliedNum == 20)
+						inputOrder = 0;
 
 					break;
 				case "미므\n근딘": // 얼음
@@ -781,9 +798,9 @@ public class Main {
 							inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
 						}
 					} else if (multipliedNum > 1) {
-						toBeOrderedQt = averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt;
+						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
 
-						inputOrder = (int) Math.floor(toBeOrderedQt / multipliedNum);
+						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
 
 					break;
@@ -877,7 +894,7 @@ public class Main {
 						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
 							inputOrder = 1;
 					} else if (multipliedNum == 1) {
-						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
+						inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
 					}
 
 					if (expireDate < 10) {
@@ -947,7 +964,8 @@ public class Main {
 					inputOrder = (int) Math.floor(toBeOrderedQt / multipliedNum);
 
 					// 입수가 1을 넘으면 평균 * 10 / 2 일떄 1을 발주넣는다.
-					if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
+					if (multipliedNum > 1 && expireDate >= 5
+							&& (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
 						inputOrder = 1;
 					}
 
@@ -1038,7 +1056,7 @@ public class Main {
 
 				int width = productNameImg.getWidth();
 				int height = productNameImg.getHeight();
-				//컷상품은 발주넣지 않게함.. 상품명 글자가 검은색일때만 발주를 넣음.
+				// 컷상품은 발주넣지 않게함.. 상품명 글자가 검은색일때만 발주를 넣음.
 				for (int a = 0; a < width; a++) {
 					for (int b = 0; b < height; b++) {
 						Color mycolor = new Color(productNameImg.getRGB(a, b));
@@ -1190,7 +1208,7 @@ public class Main {
 		r.keyPress(keyCodes);
 		r.keyRelease(keyCodes);
 		try {
-			Thread.sleep(20);
+			Thread.sleep(50);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
