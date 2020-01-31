@@ -345,7 +345,7 @@ public class Main {
 				if (setFocusToWindowsApp("엄마, 아빠", 0)) {
 					r.keyPress(KeyEvent.VK_ENTER);
 					r.keyRelease(KeyEvent.VK_ENTER);
-					copy("발주가 완료되었습니다^^");
+					copy("다넛어~");
 					paste();
 					r.keyPress(KeyEvent.VK_ENTER);
 					r.keyRelease(KeyEvent.VK_ENTER);
@@ -625,7 +625,7 @@ public class Main {
 				case "전 자담배":
 					// 입수는 10
 					// 유통기한 무한대
-					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
+					toBeOrderedQt = (averageSold * 10 / 2) - currentStock - futrueDeliveryQt;
 
 					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 
@@ -802,6 +802,9 @@ public class Main {
 
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
+					
+					if(inputOrder >= 9)
+						inputOrder = 3;
 
 					break;
 				case "과밀야재음료":
@@ -999,7 +1002,7 @@ public class Main {
 
 				case "담배":
 
-					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
+					toBeOrderedQt = (averageSold * 10 / 2) - currentStock - futrueDeliveryQt;
 
 					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					/*
@@ -1208,7 +1211,7 @@ public class Main {
 		r.keyPress(keyCodes);
 		r.keyRelease(keyCodes);
 		try {
-			Thread.sleep(50);
+			Thread.sleep(70);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
