@@ -193,6 +193,8 @@ public class Main {
 
 	private static boolean shouldInput;
 
+	private static BufferedImage enlargedDeliveredQtAdayImage;
+
 	public static void main(String args[]) throws AWTException, IOException, TesseractException {
 		Properties prop = new Properties();
 
@@ -216,14 +218,14 @@ public class Main {
 
 		// 테서랙트 세팅
 		ITesseract instance = new Tesseract();
-		instance.setDatapath("C:\\tessdata");// 노트북용
-		//instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");//
+		//instance.setDatapath("C:\\tessdata");// 노트북용
+		instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");//
 		// 집컴용
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			InputStream in = new FileInputStream("notebook.properties"); // 노트북용
-			//InputStream in = new FileInputStream("home.properties"); // 집컴용
+			//InputStream in = new FileInputStream("notebook.properties"); // 노트북용
+			InputStream in = new FileInputStream("home.properties"); // 집컴용
 
 			prop.load(in);
 			/*
@@ -565,7 +567,8 @@ public class Main {
 						deliveredQtAdayImage = capturedImage.getSubimage(
 								DELIVEREDQT_A_DAY_FIRST_X + (DELIVEREDQT_A_DAY_INTERVAL * y), DELIVEREDQT_A_DAY_FIRST_Y,
 								DELIVEREDQT_A_DAY_WIDTH, DELIVEREDQT_A_DAY_HEIGHT);
-						deliveredQtADay = Integer.parseInt(image2string(instance, deliveredQtAdayImage));
+						enlargedDeliveredQtAdayImage = enlargeImage(deliveredQtAdayImage, DELIVEREDQT_A_DAY_WIDTH, DELIVEREDQT_A_DAY_HEIGHT);
+						deliveredQtADay = Integer.parseInt(image2string(instance, enlargedDeliveredQtAdayImage));
 						totalDeliveredQt += deliveredQtADay;
 					}
 				}
@@ -827,7 +830,7 @@ public class Main {
 					// 입수는 다 1도 있고 1넘어가는 것도 있다.
 					// 유통기한은 10이하인것들이 있다.
 					// System.out.println("hit");
-					if (expireDate == 10) {
+					if (expireDate >= 10) {
 						toBeOrderedQt = averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt;
 					} else if (expireDate < 10) {
 						if ((int) (averageSold * 10) == 1) {// averageSold가 정확히는 0.1이 아님. 그래서 averageSold == 0.1안먹힘. 소수점
@@ -836,9 +839,6 @@ public class Main {
 						} else if ((int) (averageSold * 10) > 1) {
 							toBeOrderedQt = averageSold * expireDate - currentStock - futrueDeliveryQt;
 						}
-					} else if (expireDate > 10) {
-
-						toBeOrderedQt = averageSold * 10 - currentStock - futrueDeliveryQt;
 					}
 
 					inputOrder = (int) Math.floor(toBeOrderedQt / multipliedNum);
