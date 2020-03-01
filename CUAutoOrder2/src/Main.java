@@ -28,8 +28,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 import javax.imageio.ImageIO;
@@ -48,9 +50,13 @@ import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
 //** 문화상품권, 소주는 따로 발주해야됨, 여름에는 아이스드링크 스킵 풀어야됨
+import com.sun.jna.win32.StdCallLibrary;
+import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
 
 //한것들
 //빵 떡(꾀=1\n-|) 디저트 비스켓봇쿠키 스낵류 시리얼 조콜릿 껌 캔디 일반아이스크림 RI아이스크림(뮈0-0|스크림) 마른안주류(힌_르0~7호근\nl- |_-「-「「) 육카좀류       
@@ -230,8 +236,8 @@ public class Main {
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			InputStream in = new FileInputStream("notebook.properties"); // 노트북용
-			// InputStream in = new FileInputStream("home.properties"); // 집컴용
+			// InputStream in = new FileInputStream("notebook.properties"); // 노트북용
+			InputStream in = new FileInputStream("home.properties"); // 집컴용
 
 			prop.load(in);
 			/*
@@ -358,7 +364,7 @@ public class Main {
 				if (setFocusToWindowsApp("엄마, 아빠", 0)) {
 					r.keyPress(KeyEvent.VK_ENTER);
 					r.keyRelease(KeyEvent.VK_ENTER);
-					copy("다넛어~");
+					copy("다넛어~ 오늘 등록한 컷상품은 " + index + "개야~");
 					paste();
 					r.keyPress(KeyEvent.VK_ENTER);
 					r.keyRelease(KeyEvent.VK_ENTER);
@@ -538,7 +544,8 @@ public class Main {
 				 */
 
 				// 평균판매가 0.1이고 현재고가 0인것들은 쳐냄. 사진캡쳐하고 컷상품등록함
-				if (multipliedNum > 1 && (int) (averageSold * 10) <= 1) {
+				if (multipliedNum > 1 && (int) (averageSold * 10) <= 1 && !kindString.equals("담배")
+						&& !kindString.equals("전 자담배")) {
 					if (currentStock == 0) {
 						mouseClick(CUT_PRODUCT_X, CUT_PRODUCT_Y);
 						delay(10);
@@ -585,7 +592,7 @@ public class Main {
 				case "놈산식재료":
 				case "죽수산식재료":
 				case "반잔류":
-				case "대공즈서시\n:l:>-l -l-l":
+				case "대공즈서시\n:l:>-l -l-l":// 냉장즉석식
 				case "과밀야재음료":
 				case "요구르트":
 				case "다다\n-「1-「":// 우유
@@ -702,7 +709,7 @@ public class Main {
 					// 유통기한 다 10이상
 					if (multipliedNum == 1) {
 						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
-					} else if (multipliedNum > 1 ) {
+					} else if (multipliedNum > 1) {
 						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
@@ -910,7 +917,12 @@ public class Main {
 						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
 					}
 					if (expireDate <= 30) {
-						inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
+						if ((int) (averageSold * 10) == 1) {// averageSold가 정확히는 0.1이 아님. 그래서 averageSold == 0.1안먹힘. 소수점
+							// 버릴려고 이짓함.
+							inputOrder = (int) (1 - currentStock - futrueDeliveryQt);
+						} else {
+							inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
+						}
 					}
 					if (expireDate < 10) {
 
@@ -942,14 +954,14 @@ public class Main {
 					inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
 					break;
 
-				case "씸- 즈^쇄^|\n다돈「 -l-l"://상온즉석식
+				case "씸- 즈^쇄^|\n다돈「 -l-l":// 상온즉석식
 					// 입수는 다 1이다.
 					// 유통기한은 다 10이상이다.
-					
+
 					inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
-					
+
 					break;
-					
+
 				case "면끈\n-「「": // 면류
 					// 입수는 다 1이상
 					// 유통기한은 다 10이상
@@ -1048,8 +1060,8 @@ public class Main {
 							&& (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
 						inputOrder = 1;
 					}
-					
-					if(inputOrder >= 4)
+
+					if (inputOrder >= 4)
 						inputOrder = 4;
 
 					break;
@@ -1141,6 +1153,15 @@ public class Main {
 
 				// 발주값을 발주프로그램에 쓴다.
 				type(stringInputOrder);
+
+				List<String> winNameList = getAllWindowNames();
+				for (String winName : winNameList) {
+					if (winName.equals("BGF")) {
+						// System.out.println(winName);
+						doType(KeyEvent.VK_ENTER);
+						break;
+					}
+				}
 
 				// 한칸 아래로 이동
 				doType(KeyEvent.VK_DOWN);
@@ -1344,6 +1365,42 @@ public class Main {
 		bot.mouseMove(x, y);
 		bot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 		bot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+	}
+
+	// 컴터에 켜져있는 윈도우 리스트를 다 뽑아내기 위한 메소드들
+
+	static interface User32_1 extends StdCallLibrary {
+		User32_1 INSTANCE = (User32_1) Native.loadLibrary("user32", User32_1.class);
+
+		interface WNDENUMPROC extends StdCallCallback {
+			boolean callback(Pointer hWnd, Pointer arg);
+		}
+
+		boolean EnumWindows(WNDENUMPROC lpEnumFunc, Pointer userData);
+
+		int GetWindowTextA(Pointer hWnd, byte[] lpString, int nMaxCount);
+
+		Pointer GetWindow(Pointer hWnd, int uCmd);
+	}
+
+	public static List<String> getAllWindowNames() {
+		final List<String> windowNames = new ArrayList<String>();
+		final User32_1 user32 = User32_1.INSTANCE;
+		user32.EnumWindows(new User32_1.WNDENUMPROC() {
+
+			@Override
+			public boolean callback(Pointer hWnd, Pointer arg) {
+				byte[] windowText = new byte[512];
+				user32.GetWindowTextA(hWnd, windowText, 512);
+				String wText = Native.toString(windowText).trim();
+				if (!wText.isEmpty()) {
+					windowNames.add(wText);
+				}
+				return true;
+			}
+		}, null);
+
+		return windowNames;
 	}
 
 }
