@@ -19,10 +19,12 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -191,9 +193,15 @@ public class Main {
 
 	private static BufferedImage productNameImg;
 
-	private static boolean shouldInput;
-
 	private static BufferedImage enlargedDeliveredQtAdayImage;
+
+	private static int index;
+
+	private static int CUT_PRODUCT_X;
+
+	private static int CUT_PRODUCT_Y;
+
+	private static boolean wordIsBlack;
 
 	public static void main(String args[]) throws AWTException, IOException, TesseractException {
 		Properties prop = new Properties();
@@ -218,14 +226,12 @@ public class Main {
 
 		// 테서랙트 세팅
 		ITesseract instance = new Tesseract();
-		//instance.setDatapath("C:\\tessdata");// 노트북용
-		instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");//
-		// 집컴용
+		instance.setDatapath("C:\\Users\\Joshyoon\\git\\CUAutoOrder\\CUAutoOrder2\\tessdata");// 노트북,집컴
 
 		// 파일로부터 좌표값들을 받아와서 변수에 박는다.
 		try {
-			//InputStream in = new FileInputStream("notebook.properties"); // 노트북용
-			InputStream in = new FileInputStream("home.properties"); // 집컴용
+			InputStream in = new FileInputStream("notebook.properties"); // 노트북용
+			// InputStream in = new FileInputStream("home.properties"); // 집컴용
 
 			prop.load(in);
 			/*
@@ -293,6 +299,10 @@ public class Main {
 			PRODUCT_NAME_FIRST_WIDTH = getIntFromProperties(prop, "PRODUCT_NAME_FIRST_WIDTH");
 			PRODUCT_NAME_FIRST_HEIGHT = getIntFromProperties(prop, "PRODUCT_NAME_FIRST_HEIGHT");
 			PRODUCT_NAME_FIRST_INTERVAL = getIntFromProperties(prop, "PRODUCT_NAME_FIRST_INTERVAL");
+
+			// 컷상품 마우스좌표값
+			CUT_PRODUCT_X = getIntFromProperties(prop, "CUT_PRODUCT_X");
+			CUT_PRODUCT_Y = getIntFromProperties(prop, "CUT_PRODUCT_Y");
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -409,7 +419,7 @@ public class Main {
 				expireDate = 0;
 				zeroOrderCount = 0;
 				heatFirstOrderedNum = false;
-				shouldInput = false;
+				wordIsBlack = false;
 
 				if (i % 10 == 0) {
 					// delay(400);
@@ -437,6 +447,26 @@ public class Main {
 
 				// 화면 캡쳐
 				capturedImage = r.createScreenCapture(screenRect);
+
+				productNameImg = capturedImage.getSubimage(PRODUCT_NAME_FIRST_X,
+						PRODUCT_NAME_FIRST_Y + (PRODUCT_NAME_FIRST_INTERVAL * (i % 10)), PRODUCT_NAME_FIRST_WIDTH,
+						PRODUCT_NAME_FIRST_HEIGHT);
+
+				int width = productNameImg.getWidth();
+				int height = productNameImg.getHeight();
+				// 컷상품은 발주넣지 않게함.. 상품명 글자가 검은색일때만 발주를 넣음.
+				for (int a = 0; a < width; a++) {
+					for (int b = 0; b < height; b++) {
+						Color mycolor = new Color(productNameImg.getRGB(a, b));
+						if (mycolor.getBlue() == 0)
+							wordIsBlack = true;
+					}
+				}
+
+				if (!wordIsBlack) {
+					doType(KeyEvent.VK_DOWN);
+					continue;
+				}
 
 				averageSoldImage = capturedImage.getSubimage(AVERAGE_SOLD_FIRST_X, AVERAGE_SOLD_FIRST_Y,
 						AVERAGE_SOLD_WIDTH, AVERAGE_SOLD_HEIGHT);
@@ -485,7 +515,7 @@ public class Main {
 				// System.out.println(currentStock);
 
 				// 현재고와 평균판매를 비교해서 빨리넘길거는 빨리넘김
-				if (kindString.equals("담배") && currentStock > averageSold * 10 / 2) {
+				if (kindString.equals("담배") && currentStock > averageSold * 10 * 2 / 3) {
 					doType(KeyEvent.VK_DOWN);
 					// System.out.println("pass");
 					continue;
@@ -506,6 +536,28 @@ public class Main {
 				/*
 				 * if (multipliedNum == 7 || multipliedNum == 17) { multipliedNum = 1; }
 				 */
+
+				// 평균판매가 0.1이고 현재고가 0인것들은 쳐냄. 사진캡쳐하고 컷상품등록함
+				if (multipliedNum > 1 && (int) (averageSold * 10) <= 1) {
+					if (currentStock == 0) {
+						mouseClick(CUT_PRODUCT_X, CUT_PRODUCT_Y);
+						delay(10);
+						r.keyPress(KeyEvent.VK_ENTER);
+						r.keyRelease(KeyEvent.VK_ENTER);
+						delay(100);
+
+						capturedImage = r.createScreenCapture(screenRect);
+
+						File outputfile = new File(
+								"C:\\Users\\Joshyoon\\git\\CUAutoOrder\\" + "CUAutoOrder2\\CutProductsImgs\\"
+										+ java.time.LocalDate.now() + "(" + ++index + ").bmp");
+						ImageIO.write(capturedImage, "bmp", outputfile);
+
+						delay(100);
+					}
+					doType(KeyEvent.VK_DOWN);
+					continue;
+				}
 
 				// 사진을 찍은 후 연산을 해서 totalOrderedNum를 구한다.
 				for (int x = 0; x < 7; x++) {
@@ -567,7 +619,8 @@ public class Main {
 						deliveredQtAdayImage = capturedImage.getSubimage(
 								DELIVEREDQT_A_DAY_FIRST_X + (DELIVEREDQT_A_DAY_INTERVAL * y), DELIVEREDQT_A_DAY_FIRST_Y,
 								DELIVEREDQT_A_DAY_WIDTH, DELIVEREDQT_A_DAY_HEIGHT);
-						enlargedDeliveredQtAdayImage = enlargeImage(deliveredQtAdayImage, DELIVEREDQT_A_DAY_WIDTH, DELIVEREDQT_A_DAY_HEIGHT);
+						enlargedDeliveredQtAdayImage = enlargeImage(deliveredQtAdayImage, DELIVEREDQT_A_DAY_WIDTH,
+								DELIVEREDQT_A_DAY_HEIGHT);
 						deliveredQtADay = Integer.parseInt(image2string(instance, enlargedDeliveredQtAdayImage));
 						totalDeliveredQt += deliveredQtADay;
 					}
@@ -625,7 +678,7 @@ public class Main {
 							averageSold = 0.7f;
 						}
 						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
-					} else if (multipliedNum > 1 && (int) (averageSold * 10) > 1 && currentStock <= 2) {
+					} else if (multipliedNum > 1 && currentStock <= 2) {
 						inputOrder = 1;
 					}
 
@@ -634,7 +687,7 @@ public class Main {
 				case "전 자담배":
 					// 입수는 10
 					// 유통기한 무한대
-					toBeOrderedQt = (averageSold * 10 / 2) - currentStock - futrueDeliveryQt;
+					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
 
 					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 
@@ -649,7 +702,7 @@ public class Main {
 					// 유통기한 다 10이상
 					if (multipliedNum == 1) {
 						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
-					} else if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					} else if (multipliedNum > 1 ) {
 						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
@@ -677,7 +730,7 @@ public class Main {
 
 						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
 
-					} else if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					} else if (multipliedNum > 1) {
 						toBeOrderedQt = averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt;
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
@@ -693,7 +746,7 @@ public class Main {
 						} else if ((int) (averageSold * 10) > 1) {
 							inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
 						}
-					} else if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					} else if (multipliedNum > 1) {
 						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
@@ -719,7 +772,7 @@ public class Main {
 					// 입수는 다 1초과
 					// 유통기한은 다 10이상
 					if ((int) (averageSold * 10) > 1) {
-						toBeOrderedQt = averageSold * 10 * 3 / 4 - currentStock - futrueDeliveryQt;
+						toBeOrderedQt = averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt;
 
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					}
@@ -765,24 +818,23 @@ public class Main {
 						} else if ((int) (averageSold * 10) > 1) {
 							inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
 						}
-					} else if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2
-							&& (int) (averageSold * 10) > 1) {
+					} else if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
 						inputOrder = 1;
 					}
 					break;
-				
-				case "폐품\n뫼므"://의약외품
-					if(multipliedNum == 1) {
+
+				case "폐품\n뫼므":// 의약외품
+					if (multipliedNum == 1) {
 						inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
-					}else if(multipliedNum > 1) {
-						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt && (int) (averageSold * 10) > 1)
+					} else if (multipliedNum > 1) {
+						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
 							inputOrder = 1;
 					}
 					break;
 				case "컨감기능":
 					// 입수는 10이다.
 					// 유통기한 10이상이다.
-					if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt && (int) (averageSold * 10) > 1)
+					if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
 						inputOrder = 1;
 					break;
 
@@ -816,7 +868,7 @@ public class Main {
 						} else if ((int) (averageSold * 10) > 1) {
 							inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
 						}
-					} else if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					} else if (multipliedNum > 1) {
 						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
 
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
@@ -843,7 +895,7 @@ public class Main {
 
 					inputOrder = (int) Math.floor(toBeOrderedQt / multipliedNum);
 
-					if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2 && (int) (averageSold * 10) > 1) {
+					if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
 						inputOrder = 1;
 					}
 
@@ -883,7 +935,6 @@ public class Main {
 				case "우전돋샬품":// 우천용상품
 				case "꽈- 호호\n몸댈†빙돋품":// 홈/주방용품
 				case "완전샬비뫼얌품":
-				case "씸- 즈^쇄^|\n다돈「 -l-l":
 				case "냐도즈서시\n:l:>-l -l-l":
 					// 입수는 다 1이다.
 					// 유통기한은 다 10이상이다.
@@ -891,10 +942,18 @@ public class Main {
 					inputOrder = (int) (averageSold * 10 - currentStock - futrueDeliveryQt);
 					break;
 
+				case "씸- 즈^쇄^|\n다돈「 -l-l"://상온즉석식
+					// 입수는 다 1이다.
+					// 유통기한은 다 10이상이다.
+					
+					inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
+					
+					break;
+					
 				case "면끈\n-「「": // 면류
 					// 입수는 다 1이상
 					// 유통기한은 다 10이상
-					if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					if (multipliedNum > 1) {
 						toBeOrderedQt = averageSold * 10 / 2 - currentStock - futrueDeliveryQt;
 
 						inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
@@ -906,11 +965,16 @@ public class Main {
 					// 입수는 다 1이다.
 				case "죽수산식재료":
 
-					if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					if (multipliedNum > 1) {
 						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
 							inputOrder = 1;
 					} else if (multipliedNum == 1) {
-						inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
+						if ((int) (averageSold * 10) == 1) {// averageSold가 정확히는 0.1이 아님. 그래서 averageSold == 0.1안먹힘. 소수점
+							// 버릴려고 이짓함.
+							inputOrder = (int) (1 - currentStock - futrueDeliveryQt);
+						} else if ((int) (averageSold * 10) > 1) {
+							inputOrder = (int) (averageSold * 10 * 2 / 3 - currentStock - futrueDeliveryQt);
+						}
 					}
 
 					if (expireDate < 10) {
@@ -941,7 +1005,7 @@ public class Main {
 					// 소수점자리이하 내림을 해야됨
 					inputOrder = (int) Math.floor(toBeOrderedQt / multipliedNum);
 
-					if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					if (multipliedNum > 1) {
 
 						toBeOrderedQt = (averageSold * 10 / 2) - currentStock - futrueDeliveryQt;
 
@@ -981,9 +1045,12 @@ public class Main {
 
 					// 입수가 1을 넘으면 평균 * 10 / 2 일떄 1을 발주넣는다.
 					if (multipliedNum > 1 && expireDate >= 5
-							&& (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2 && (int) (averageSold * 10) > 1) {
+							&& (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
 						inputOrder = 1;
 					}
+					
+					if(inputOrder >= 4)
+						inputOrder = 4;
 
 					break;
 
@@ -992,7 +1059,7 @@ public class Main {
 					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
 					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 
-					if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2 && (int) (averageSold * 10) > 1) {
+					if (multipliedNum > 1 && (currentStock + futrueDeliveryQt) <= averageSold * 10 / 2) {
 						inputOrder = 1;
 					}
 
@@ -1015,7 +1082,7 @@ public class Main {
 
 				case "담배":
 
-					toBeOrderedQt = (averageSold * 10 / 2) - currentStock - futrueDeliveryQt;
+					toBeOrderedQt = (averageSold * 10 * 2 / 3) - currentStock - futrueDeliveryQt;
 
 					inputOrder = (int) Math.ceil(toBeOrderedQt / multipliedNum);
 					/*
@@ -1032,7 +1099,7 @@ public class Main {
 					// 입수는 1또는 1이상
 					// 유통기한은 10이상
 
-					if (multipliedNum > 1 && (int) (averageSold * 10) > 1) {
+					if (multipliedNum > 1) {
 						if (currentStock <= averageSold * 10 / 2 - futrueDeliveryQt)
 							inputOrder = 1;
 					} else if (multipliedNum == 1) {
@@ -1066,27 +1133,14 @@ public class Main {
 					inputOrder = 9;
 				}
 
-				productNameImg = capturedImage.getSubimage(PRODUCT_NAME_FIRST_X,
-						PRODUCT_NAME_FIRST_Y + (PRODUCT_NAME_FIRST_INTERVAL * (i % 10)), PRODUCT_NAME_FIRST_WIDTH,
-						PRODUCT_NAME_FIRST_HEIGHT);
-
-				int width = productNameImg.getWidth();
-				int height = productNameImg.getHeight();
-				// 컷상품은 발주넣지 않게함.. 상품명 글자가 검은색일때만 발주를 넣음.
-				for (int a = 0; a < width; a++) {
-					for (int b = 0; b < height; b++) {
-						Color mycolor = new Color(productNameImg.getRGB(a, b));
-						if (mycolor.getBlue() == 0)
-							shouldInput = true;
-					}
-				}
 				String stringInputOrder = String.valueOf(inputOrder);
 
 				System.out.println(stringInputOrder);
 
+				// 현재고가 0이고 평균판매량이 0.1이면 컷상품 등록시키고 사진캡쳐떠서 저장한다.
+
 				// 발주값을 발주프로그램에 쓴다.
-				if (shouldInput)
-					type(stringInputOrder);
+				type(stringInputOrder);
 
 				// 한칸 아래로 이동
 				doType(KeyEvent.VK_DOWN);
@@ -1283,6 +1337,13 @@ public class Main {
 		Clipboard systemClipboard = defaultToolkit.getSystemClipboard();
 
 		return systemClipboard;
+	}
+
+	public static void mouseClick(int x, int y) throws AWTException {
+		Robot bot = new Robot();
+		bot.mouseMove(x, y);
+		bot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+		bot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 	}
 
 }
